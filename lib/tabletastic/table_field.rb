@@ -4,15 +4,25 @@ module Tabletastic
   class TableField
     @@association_methods = %w[to_label display_name full_name name title username login value to_str to_s]
 
-    attr_reader :heading, :method, :method_or_proc, :cell_html, :heading_html, :klass
+    attr_reader :method, :method_or_proc, :cell_html, :heading_html, :klass
 
     def initialize(*args, &proc)
       options = args.extract_options!
       @method = args.first.to_sym
       @method_or_proc = block_given? ? proc : method
-      @cell_html, @heading_html = options[:cell_html], options[:heading_html]
+      @cell_html, @heading_html = options[:cell_html], (options[:heading_html]||{}).merge({width: options.delete(:width)})
       @klass = options.delete(:klass)
       @heading = options.delete(:heading) || default_heading
+      @sort = options.delete(:sort) || default_sort
+      @template = options.delete(:template)
+    end
+
+    def heading
+      if @sort
+        heading_with_sort
+      else
+        @heading
+      end
     end
 
     def cell_data(record)
@@ -31,6 +41,53 @@ module Tabletastic
 
     def default_heading
       I18n.translate(method, :scope => i18n_scope, :default => klass_default_heading)
+    end
+
+    def default_sort
+      false
+    end
+
+    def heading_with_sort
+      if params[:q] && params[:q][:s]
+        prev_attr, prev_dir = params[:q][:s].split(" ")
+      end
+
+      current_dir = prev_attr == @method.to_s ? prev_dir : nil
+      new_dir = if current_dir
+        current_dir == 'desc' ? 'asc' : 'desc'
+      else
+        'asc'
+      end
+
+      html_options = {}
+      html_options[:class] = ['sort_link', current_dir].compact.join(' ')
+
+      query_hash = {}
+      query_hash[:q] = (params[:q]||{}).with_indifferent_access.merge(s: "#{@method} #{new_dir}")
+      options_for_url = params.merge(query_hash)
+      binding.pry
+      @template.link_to(
+        [default_heading, order_indicator_for(current_dir)]
+          .compact
+          .join(' ')
+          .html_safe,
+        @template.url_for(options_for_url),
+        html_options
+        )
+    end
+
+    def params
+      @template.params
+    end
+
+    def order_indicator_for order
+      if order == 'asc'
+        '&#9650;'
+      elsif order == 'desc'
+        '&#9660;'
+      else
+        nil
+      end
     end
 
     def klass_default_heading

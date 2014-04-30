@@ -56,7 +56,7 @@ module Tabletastic
     #
     def cell(*args, &proc)
       options = args.extract_options!
-      options.merge!(:klass => klass)
+      options.merge!(:klass => klass, :template => @template)
       args << options
       @table_fields << TableField.new(*args, &proc)
       # Since this will likely be called with <%= %> (aka 'concat'), explicitly return an 

@@ -6,7 +6,7 @@ module Tabletastic
       klass = default_class_for(collection)
       options = args.extract_options!
       initialize_html_options(options, klass)
-      result = capture { block.call(TableBuilder.new(collection, klass, self)) }
+      result = capture { TableBuilder.new(collection, klass, self).data(&block) }
       content_tag(:table, result, options[:html])
     end
 
@@ -32,6 +32,4 @@ module Tabletastic
   end
 end
 
-ActiveSupport.on_load(:action_view) do
-  include Tabletastic::Helper
-end
+ActionController::Base.helper Tabletastic::Helper
