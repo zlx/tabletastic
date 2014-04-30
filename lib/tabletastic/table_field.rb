@@ -27,7 +27,7 @@ module Tabletastic
 
     def cell_data(record)
       # Get the attribute or association in question
-      result = send_or_call(record, method_or_proc)
+      result = @template.capture { send_or_call(record, method_or_proc) }
       # If we already have a string, just return it
       return result if result.is_a?(String)
 
@@ -65,7 +65,6 @@ module Tabletastic
       query_hash = {}
       query_hash[:q] = (params[:q]||{}).with_indifferent_access.merge(s: "#{@method} #{new_dir}")
       options_for_url = params.merge(query_hash)
-      binding.pry
       @template.link_to(
         [default_heading, order_indicator_for(current_dir)]
           .compact
