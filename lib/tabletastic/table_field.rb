@@ -27,7 +27,7 @@ module Tabletastic
 
     def cell_data(record)
       # Get the attribute or association in question
-      result = @template.capture { send_or_call(record, method_or_proc) }
+      result = send_or_call(record, method_or_proc)
       # If we already have a string, just return it
       return result if result.is_a?(String)
 
@@ -107,7 +107,8 @@ module Tabletastic
 
     def send_or_call(object, duck)
       if duck.respond_to?(:call)
-        duck.call(object)
+        # maybe an erb block or normal proc
+        @template.capture { duck.call(object) }
       else
         object.send(duck)
       end
